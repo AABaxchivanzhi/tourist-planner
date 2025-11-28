@@ -3,21 +3,24 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Планировщик туристических маршрутов</title>
+    <title>Планировщик туристических маршрутов - Вологда</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
     <div class="container">
         <header>
-            <h1>Планировщик туристических маршрутов</h1>
-            <p class="description">Выберите достопримечательности и максимальную длину маршрута, чтобы построить оптимальный пеший маршрут для туристов.</p>
+            <h1>Планировщик туристических маршрутов - Вологда</h1>
+            <p class="description">Выберите достопримечательности Вологды и максимальную длину маршрута для построения оптимального пешего маршрута с использованием точного алгоритма.</p>
         </header>
         
         <div class="main-content">
             <div class="sidebar">
                 <div class="section">
-                    <h2>Выбор достопримечательностей</h2>
+                    <h2>Достопримечательности Вологды</h2>
+                    <div class="info-text">
+                        <small>Рекомендуется выбирать до 15 объектов для быстрого расчета</small>
+                    </div>
                     <div class="attractions-list" id="attractionsList">
                         <!-- Список достопримечательностей будет заполнен JavaScript -->
                     </div>
@@ -36,9 +39,12 @@
                     <h2>Параметры маршрута</h2>
                     <div class="input-group">
                         <label for="maxDistance">Максимальная длина маршрута (метры):</label>
-                        <input type="number" id="maxDistance" min="1" max="25000" value="5000">
+                        <input type="number" id="maxDistance" min="1" max="25000" value="3000">
                     </div>
                     <button id="findRoute">Найти оптимальный маршрут</button>
+                    <div class="info-text">
+                        <small>Используется точный алгоритм динамического программирования</small>
+                    </div>
                 </div>
                 
                 <div class="section">
@@ -57,6 +63,7 @@
 
     <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
     <script src="data/attractions.js"></script>
+    <script src="js/tsp-solver.js"></script>
     <script src="js/map.js"></script>
     <script src="js/route-planner.js"></script>
     <script src="js/app.js"></script>

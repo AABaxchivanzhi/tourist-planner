@@ -233,3 +233,128 @@ button:hover {
     border: 2px solid white;
     box-shadow: 0 0 5px rgba(0,0,0,0.5);
 }
+.info-text {
+    margin-top: 10px;
+    color: #7f8c8d;
+    font-size: 0.85rem;
+    text-align: center;
+}
+
+.route-list li {
+    padding: 10px 5px;
+    border-bottom: 1px solid #eee;
+    margin-bottom: 5px;
+}
+
+.route-list li:last-child {
+    border-bottom: none;
+}
+
+.stats {
+    margin-top: 15px;
+    padding: 10px;
+    background-color: #e8f4fd;
+    border-radius: 5px;
+    border-left: 4px solid #3498db;
+}
+
+.stats p {
+    margin: 5px 0;
+    font-size: 0.9rem;
+}
+
+.info-text {
+    margin-top: 10px;
+    color: #7f8c8d;
+    font-size: 0.85rem;
+    text-align: center;
+}
+
+.route-list li {
+    padding: 10px 5px;
+    border-bottom: 1px solid #eee;
+    margin-bottom: 5px;
+}
+
+.route-list li:last-child {
+    border-bottom: none;
+}
+
+.stats {
+    margin-top: 15px;
+    padding: 10px;
+    background-color: #e8f4fd;
+    border-radius: 5px;
+    border-left: 4px solid #3498db;
+}
+
+.stats p {
+    margin: 5px 0;
+    font-size: 0.9rem;
+}
+
+.warning-message {
+    background-color: #fff3cd;
+    border: 1px solid #ffeaa7;
+    color: #856404;
+    padding: 10px;
+    border-radius: 5px;
+    margin-top: 10px;
+    font-size: 0.9rem;
+}
+
+.performance-warning {
+    background-color: #f8d7da;
+    border: 1px solid #f5c6cb;
+    color: #721c24;
+    padding: 8px;
+    border-radius: 5px;
+    margin: 5px 0;
+    font-size: 0.8rem;
+}
+
+.success-message {
+    background-color: #d4edda;
+    border: 1px solid #c3e6cb;
+    color: #155724;
+    padding: 10px;
+    border-radius: 5px;
+    margin-top: 10px;
+    font-size: 0.9rem;
+}
+
+.stats {
+    margin-top: 15px;
+    padding: 12px;
+    background-color: #f8f9fa;
+    border-radius: 5px;
+    border-left: 4px solid #3498db;
+}
+
+.stats p {
+    margin: 6px 0;
+    font-size: 0.9rem;
+    display: flex;
+    justify-content: space-between;
+}
+
+.stats p strong {
+    color: #2c3e50;
+}
+
+.route-list li {
+    padding: 10px 8px;
+    border-bottom: 1px solid #e9ecef;
+    margin-bottom: 4px;
+    background-color: #fff;
+    border-radius: 4px;
+    transition: background-color 0.2s;
+}
+
+.route-list li:hover {
+    background-color: #f8f9fa;
+}
+
+.route-list li:last-child {
+    border-bottom: none;
+}

@@ -7,9 +7,9 @@ class MapManager {
         this.selectedAttractions = new Set();
     }
 
-    // Инициализация карты с возможностью указать центр
-    initMap(center = [59.220, 39.890], zoom = 14) {
-        this.map = L.map('map').setView(center, zoom);
+    // Инициализация карты
+    initMap() {
+        this.map = L.map('map').setView([59.7558, 39.6173], 13);
         
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
@@ -18,7 +18,7 @@ class MapManager {
         return this.map;
     }
 
-    // Остальной код без изменений...
+    // Добавление маркеров на карту
     addMarkers(attractions, onMarkerClick) {
         this.clearMarkers();
         
@@ -46,6 +46,7 @@ class MapManager {
         });
     }
 
+    // Установка стиля для выбранного маркера
     setSelectedMarkerStyle(marker) {
         marker.setIcon(
             L.divIcon({
@@ -57,11 +58,13 @@ class MapManager {
         );
     }
 
+    // Очистка всех маркеров
     clearMarkers() {
         this.markers.forEach(marker => this.map.removeLayer(marker));
         this.markers = [];
     }
 
+    // Отображение маршрута на карте
     displayRoute(route, attractions) {
         this.clearRoute();
         
@@ -87,6 +90,7 @@ class MapManager {
         this.map.fitBounds(this.routeLayer.getBounds());
     }
 
+    // Очистка маршрута
     clearRoute() {
         if (this.routeLayer) {
             this.map.removeLayer(this.routeLayer);
@@ -94,6 +98,7 @@ class MapManager {
         }
     }
 
+    // Обновление выбранных достопримечательностей
     updateSelectedAttractions(selectedIds) {
         this.selectedAttractions = new Set(selectedIds);
     }
