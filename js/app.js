@@ -4,7 +4,6 @@ class TourismPlannerApp {
         this.mapManager = new MapManager();
         this.routePlanner = new RoutePlanner(attractions, distanceMatrix);
         this.selectedAttractions = new Set();
-        this.requiredAttractions = new Set(); // Обязательные для посещения
         
         this.init();
     }
@@ -23,41 +22,20 @@ class TourismPlannerApp {
         attractionsList.innerHTML = '';
         
         attractions.forEach(attraction => {
-            const isSelected = this.selectedAttractions.has(attraction.id);
-            const isRequired = this.requiredAttractions.has(attraction.id);
-            
             const item = document.createElement('div');
             item.className = 'attraction-item';
-            if (isSelected) {
+            if (this.selectedAttractions.has(attraction.id)) {
                 item.classList.add('selected');
-            }
-            if (isRequired) {
-                item.classList.add('required');
             }
             
             item.innerHTML = `
-                <div class="attraction-controls">
-                    <input type="checkbox" class="attraction-checkbox" id="attraction-${attraction.id}" 
-                           ${isSelected ? 'checked' : ''}>
-                    <button class="star-btn ${isRequired ? 'starred' : ''}" data-id="${attraction.id}">
-                        ${isRequired ? '★' : '☆'}
-                    </button>
-                </div>
+                <input type="checkbox" class="attraction-checkbox" id="attraction-${attraction.id}" 
+                       ${this.selectedAttractions.has(attraction.id) ? 'checked' : ''}>
                 <label for="attraction-${attraction.id}">${attraction.name}</label>
             `;
             
-            // Обработчик клика на чекбокс
-            item.addEventListener('click', (e) => {
-                if (!e.target.classList.contains('star-btn')) {
-                    this.toggleAttraction(attraction.id);
-                }
-            });
-            
-            // Обработчик клика на звездочку
-            const starBtn = item.querySelector('.star-btn');
-            starBtn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                this.toggleRequired(attraction.id);
+            item.addEventListener('click', () => {
+                this.toggleAttraction(attraction.id);
             });
             
             attractionsList.appendChild(item);
@@ -68,7 +46,6 @@ class TourismPlannerApp {
     toggleAttraction(id) {
         if (this.selectedAttractions.has(id)) {
             this.selectedAttractions.delete(id);
-            this.requiredAttractions.delete(id); // Убираем из обязательных если снимаем выбор
         } else {
             this.selectedAttractions.add(id);
         }
@@ -77,7 +54,6 @@ class TourismPlannerApp {
         this.updateMapMarkers();
         this.initAttractionsList();
     }
-
 
     // Установить выбранные достопримечательности (для выделения многоугольником)
     setSelectedAttractions(selectedIds) {
@@ -91,7 +67,7 @@ class TourismPlannerApp {
     updateMapMarkers() {
         this.mapManager.addMarkers(attractions, (id) => {
             this.toggleAttraction(id);
-        }, this.requiredAttractions);
+        });
     }
 
     // Настройка обработчиков событий
@@ -106,40 +82,60 @@ class TourismPlannerApp {
     }
 
     // Поиск оптимального маршрута
-    findOptimalRoute() {
+    async findOptimalRoute() {  // ← добавь async
         const maxDistance = parseInt(document.getElementById('maxDistance').value);
         const selectedCount = this.selectedAttractions.size;
-        const requiredCount = this.requiredAttractions.size;
-        
 
-        // Показываем индикатор загрузки
-        this.showMessage(`Расчет маршрута для ${selectedCount} объектов (${requiredCount} обязательных)...`);
+        if (selectedCount === 0) {
+            this.showMessage('Пожалуйста, выберите хотя бы одну достопримечательность.');
+            return;
+        }
 
-        setTimeout(() => {
-            try {
-                const selectedIds = Array.from(this.selectedAttractions);
-                const requiredIds = Array.from(this.requiredAttractions);
-                const route = this.routePlanner.findOptimalRoute(selectedIds, maxDistance, requiredIds);
-                
-                if (route.path.length === 0) {
-                    this.showMessage('Не удалось построить маршрут с выбранными параметрами. Попробуйте увеличить максимальную длину маршрута.');
-                    return;
-                }
-                
-                // Проверяем, что все обязательные точки включены в маршрут
-                const missingRequired = requiredIds.filter(id => !route.path.includes(id));
-                if (missingRequired.length > 0) {
-                    this.showMessage(`Не удалось включить все обязательные объекты в маршрут. Увеличьте максимальную длину маршрута.`);
-                    return;
-                }
-                
-                this.displayResults(route);
-                this.mapManager.displayRoute(route, attractions);
-            } catch (error) {
-                console.error('Ошибка при поиске маршрута:', error);
-                this.showMessage('Произошла ошибка при поиске маршрута. Попробуйте выбрать меньше объектов или увеличить максимальную длину.');
+        this.showMessage(`Расчет маршрута для ${selectedCount} объектов...`);
+
+        try {
+            const selectedMatrix = createDistanceMatrix(this.selectedAttractions);  // ← объяви selectedIds
+
+            // Подготавливаем данные для API
+            const requestData = {
+                N: selectedMatrix,
+                D: maxDistance,
+            };
+
+            console.log('Отправка запроса к API:', requestData);
+
+            // Вызов ASP.NET API
+            const response = await fetch('http://localhost:5064/api/route/calculate', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(requestData)
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
             }
-        }, 100);
+
+            const result = await response.json();
+            console.log('Получен ответ от API:', result);
+
+            // Преобразуем индексы обратно в исходные ID
+            const path = result.path.map(idx => selectedIds[idx]);
+
+            // Создаем объект маршрута для отображения
+            const route = {
+                path: path,
+                distance: result.distance
+            };
+
+            this.displayResults(route);
+            this.mapManager.displayRoute(route, attractions);
+
+        } catch (error) {
+            console.error('Ошибка при вызове API:', error);
+            this.showMessage('Произошла ошибка при поиске маршрута. Попробуйте выбрать меньше объектов или увеличить максимальную длину.');
+        }
     }
 
     // Отображение результатов
@@ -154,16 +150,12 @@ class TourismPlannerApp {
         `;
         
         route.path.forEach((id, index) => {
-            const isRequired = this.requiredAttractions.has(id);
-            const starIcon = isRequired ? ' <span class="required-star">★</span>' : '';
-            resultsHTML += `<li><strong>${index + 1}.</strong> ${attractions[id].name}${starIcon}</li>`;
-        });
+            resultsHTML += `<li><strong>${index + 1}.</strong><a href=https://yandex.ru/search?text=${encodeURIComponent(attractions[id].name)} target="_blank" rel="noopener">${attractions[id].name}</a></li>`; });
         
         resultsHTML += `
                 </ol>
                 <div class="stats">
                     <p><strong>Количество объектов:</strong> ${route.path.length}</p>
-                    <p><strong>Обязательные объекты:</strong> ${this.requiredAttractions.size}</p>
                     <p><strong>Длина маршрута:</strong> ${route.distance} м</p>
                     <p><strong>Оставшееся расстояние:</strong> ${maxDistance - route.distance} м</p>
                     <p><strong>Эффективность использования:</strong> ${efficiency}%</p>
@@ -171,7 +163,14 @@ class TourismPlannerApp {
             </div>
         `;
         
-    
+        // Добавляем информацию о качестве маршрута
+        if (route.path.length === this.selectedAttractions.size) {
+            resultsHTML += `<div class="success-message">✓ Все выбранные объекты включены в маршрут</div>`;
+        } else {
+            resultsHTML += `<div class="warning-message">⚠ В маршрут включено ${route.path.length} из ${this.selectedAttractions.size} объектов</div>`;
+        }
+        
+        document.getElementById('results').innerHTML = resultsHTML;
     }
 
     // Показать сообщение
@@ -182,8 +181,8 @@ class TourismPlannerApp {
     // Очистка выбора
     clearSelection() {
         this.selectedAttractions.clear();
-        this.requiredAttractions.clear();
         this.mapManager.updateSelectedAttractions(this.selectedAttractions);
+        this.mapManager.clearDrawing();
         this.initAttractionsList();
         this.updateMapMarkers();
         this.mapManager.clearRoute();
