@@ -11,56 +11,58 @@ class RoutePlanner {
             return { path: [], distance: 0 };
         }
 
-        // Если выбрана только одна точка
-        if (selectedIds.length === 1) {
-            return { path: selectedIds, distance: 0 };
-        }
-
-        // Используем точный алгоритм динамического программирования
-        return this.findOptimalRouteExact(selectedIds, maxDistance);
-    }
-
-    // Точный алгоритм с динамическим программированием
-    findOptimalRouteExact(selectedIds, maxDistance) {
-        // Создаем подматрицу расстояний для выбранных точек
-        const subMatrix = this.createSubMatrix(selectedIds);
+        // Используем улучшенный жадный алгоритм с несколькими стартовыми точками
+        let bestRoute = { path: [], distance: Infinity };
         
-        const solver = new TSPSolver(subMatrix, maxDistance);
-        const result = solver.findOptimalRoute();
-        
-        // Преобразуем индексы обратно в исходные ID
-        const path = result.path.map(idx => selectedIds[idx]);
-        
-        // Пересчитываем длину маршрута по исходной матрице расстояний
-        const actualDistance = this.calculateActualDistance(path);
-        
-        return { 
-            path: path, 
-            distance: actualDistance 
-        };
-    }
-
-    // Создание подматрицы расстояний для выбранных точек
-    createSubMatrix(selectedIds) {
-        const n = selectedIds.length;
-        const subMatrix = new Array(n);
-        
-        for (let i = 0; i < n; i++) {
-            subMatrix[i] = new Array(n);
-            for (let j = 0; j < n; j++) {
-                subMatrix[i][j] = this.distanceMatrix[selectedIds[i]][selectedIds[j]];
+        // Пробуем начать с каждой точки
+        for (let startId of selectedIds) {
+            const route = this.buildGreedyRoute(selectedIds, startId, maxDistance);
+            
+            if (route.path.length > bestRoute.path.length || 
+                (route.path.length === bestRoute.path.length && route.distance < bestRoute.distance)) {
+                bestRoute = route;
             }
         }
         
-        return subMatrix;
+        return bestRoute;
     }
 
-    // Расчет длины маршрута по исходной матрице расстояний
-    calculateActualDistance(path) {
-        let distance = 0;
-        for (let i = 0; i < path.length - 1; i++) {
-            distance += this.distanceMatrix[path[i]][path[i + 1]];
+    // Построение маршрута жадным алгоритмом
+    buildGreedyRoute(selectedIds, startId, maxDistance) {
+        const path = [startId];
+        let totalDistance = 0;
+        const visited = new Set([startId]);
+        let current = startId;
+        
+        while (visited.size < selectedIds.length) {
+            let next = -1;
+            let minDist = Infinity;
+            
+            for (let id of selectedIds) {
+                if (!visited.has(id)) {
+                    const dist = this.distanceMatrix[current][id];
+                    if (dist < minDist && totalDistance + dist <= maxDistance) {
+                        minDist = dist;
+                        next = id;
+                    }
+                }
+            }
+            
+            if (next === -1) break;
+            
+            path.push(next);
+            totalDistance += minDist;
+            visited.add(next);
+            current = next;
         }
-        return distance;
+        
+        return { path, distance: totalDistance };
+    }
+
+    // Альтернативный алгоритм (можно использовать для сравнения)
+    findAlternativeRoute(selectedIds, maxDistance) {
+        // Более сложный алгоритм можно реализовать здесь
+        // Например, метод ветвей и границ или генетический алгоритм
+        return this.findOptimalRoute(selectedIds, maxDistance);
     }
 }
