@@ -82,36 +82,60 @@ class TourismPlannerApp {
     }
 
     // Поиск оптимального маршрута
-    findOptimalRoute() {
+    async findOptimalRoute() {  // ← добавь async
         const maxDistance = parseInt(document.getElementById('maxDistance').value);
         const selectedCount = this.selectedAttractions.size;
-        
+
         if (selectedCount === 0) {
             this.showMessage('Пожалуйста, выберите хотя бы одну достопримечательность.');
             return;
         }
 
-        // Показываем индикатор загрузки
         this.showMessage(`Расчет маршрута для ${selectedCount} объектов...`);
 
-        // Используем setTimeout чтобы дать интерфейсу обновиться
-        setTimeout(() => {
-            try {
-                const selectedIds = Array.from(this.selectedAttractions);
-                const route = this.routePlanner.findOptimalRoute(selectedIds, maxDistance);
-                
-                if (route.path.length === 0) {
-                    this.showMessage('Не удалось построить маршрут с выбранными параметрами. Попробуйте увеличить максимальную длину маршрута.');
-                    return;
-                }
-                
-                this.displayResults(route);
-                this.mapManager.displayRoute(route, attractions);
-            } catch (error) {
-                console.error('Ошибка при поиске маршрута:', error);
-                this.showMessage('Произошла ошибка при поиске маршрута. Попробуйте выбрать меньше объектов или увеличить максимальную длину.');
+        try {
+            const selectedIds = Array.from(this.selectedAttractions);  // ← объяви selectedIds
+
+            // Подготавливаем данные для API
+            const requestData = {
+                N: selectedIds.length,
+                D: maxDistance,
+            };
+
+            console.log('Отправка запроса к API:', requestData);
+
+            // Вызов ASP.NET API
+            const response = await fetch('http://localhost:5064/api/route/calculate', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(requestData)
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
             }
-        }, 100);
+
+            const result = await response.json();
+            console.log('Получен ответ от API:', result);
+
+            // Преобразуем индексы обратно в исходные ID
+            const path = result.path.map(idx => selectedIds[idx]);
+
+            // Создаем объект маршрута для отображения
+            const route = {
+                path: path,
+                distance: result.distance
+            };
+
+            this.displayResults(route);
+            this.mapManager.displayRoute(route, attractions);
+
+        } catch (error) {
+            console.error('Ошибка при вызове API:', error);
+            this.showMessage('Произошла ошибка при поиске маршрута. Попробуйте выбрать меньше объектов или увеличить максимальную длину.');
+        }
     }
 
     // Отображение результатов
