@@ -32,5 +32,21 @@
       }
     ],
     "ReturnTypes": []
+  },
+  {
+    "ContainingType": "RouteController",
+    "Method": "GetRoute",
+    "RelativePath": "api/Route/getroute",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "i",
+        "Type": "System.Int32",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
   }
 ]
