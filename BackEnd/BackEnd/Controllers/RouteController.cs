@@ -1,10 +1,30 @@
 ﻿using BackEnd;
 using Microsoft.AspNetCore.Mvc;
+using System.IO;
 
 [ApiController]
 [Route("api/[controller]")]
 public class RouteController : ControllerBase
 {
+    public List<SavedRoute> SavedRoutes { get; set; } = new List<SavedRoute>();
+    [HttpPost("getroute")]
+    public IActionResult GetRoute(int i)
+    {
+        if (i < 0 || i >= SavedRoutes.Count)  // ← проверка
+        {
+            return NotFound($"Маршрут с индексом {i} не найден"); ;
+        }
+            var route = SavedRoutes[i];
+        var result = new
+        {
+            count = route.count,
+            path = route.path,
+            distance = route.distance
+        };
+
+        return Ok(result);
+    }
+
     [HttpPost("calculate")]
     public IActionResult CalculateRoute([FromBody] RouteRequest request)
     {
@@ -94,6 +114,11 @@ public class RouteController : ControllerBase
         Console.WriteLine(string.Join(" ", path));
         Console.WriteLine($"🔍 Алгоритм: N={request.N}, D={request.D}");
         Console.WriteLine($"🔍 Результат: {path.Count} точек, длина {bestLength}");
+        SavedRoute newRoute = new();
+        newRoute.count = path.Count;
+        newRoute.path = path.ToArray();
+        newRoute.distance = bestLength;
+        SavedRoutes.Add(newRoute);
         var result = new
         {
             count = path.Count,
@@ -116,6 +141,12 @@ public class RouteController : ControllerBase
         return count;
     }
 
+}
+
+public class SavedRoute {
+    public int count;
+    public int distance;
+    public int[] path;
 }
 
 public class RouteRequest
