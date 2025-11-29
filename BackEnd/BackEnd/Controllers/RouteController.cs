@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using BackEnd;
+using Microsoft.AspNetCore.Mvc;
 
 [ApiController]
 [Route("api/[controller]")]
@@ -9,7 +10,8 @@ public class RouteController : ControllerBase
     {
         int PointNumber = request.N;  // ← брать из request
         int MaxLength = request.D;    // ← брать из request
-        int[,] Matrix = ConvertTo2DArray(request.Matrix); // ← брать из request
+
+        int[][] Matrix = Data.DistanceMatrix;
 
         int size = 1 << PointNumber;
         int[,] Ways = new int[size, PointNumber];
@@ -39,7 +41,7 @@ public class RouteController : ControllerBase
                     if ((mask & (1 << next)) != 0) continue; // уже есть в маске
 
                     int newMask = mask | (1 << next); // задается новая маска через ИЛИ: 1001 ИЛИ 0010 = 1011
-                    int newLength = Ways[mask, last] + Matrix[last, next];
+                    int newLength = Ways[mask, last] + Matrix[last][next];
 
                     if (newLength <= MaxLength && newLength < Ways[newMask, next])
                     {
@@ -95,22 +97,14 @@ public class RouteController : ControllerBase
         var result = new
         {
             count = path.Count,
-            path,
+            path = path.ToArray(),
             distance = bestLength
         };
 
         return Ok(result);
     }
 
-    private int[,] ConvertTo2DArray(int[][] jaggedArray)
-    {
-        int n = jaggedArray.Length;
-        int[,] result = new int[n, n];
-        for (int i = 0; i < n; i++)
-            for (int j = 0; j < n; j++)
-                result[i, j] = jaggedArray[i][j];
-        return result;
-    }
+    
     static int CountBits(int n)
     {
         int count = 0;
@@ -128,6 +122,5 @@ public class RouteRequest
 {
     public int N { get; set; }
     public int D { get; set; }
-    public int[][] Matrix { get; set; }
 }
 
