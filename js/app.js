@@ -4,6 +4,7 @@ class TourismPlannerApp {
         this.mapManager = new MapManager();
         this.routePlanner = new RoutePlanner(attractions, distanceMatrix);
         this.selectedAttractions = new Set();
+        this.savedRoutes = this.loadSavedRoutes();
         
         this.init();
     }
@@ -14,6 +15,7 @@ class TourismPlannerApp {
         this.initAttractionsList();
         this.updateMapMarkers();
         this.setupEventListeners();
+        this.initSavedRoutesList();
     }
 
     // Инициализация списка достопримечательностей
@@ -39,6 +41,39 @@ class TourismPlannerApp {
             });
             
             attractionsList.appendChild(item);
+        });
+    }
+
+    // Инициализация списка сохраненных маршрутов
+    initSavedRoutesList() {
+        const savedRoutesList = document.getElementById('savedRoutesList');
+        if (!savedRoutesList) return;
+        
+        savedRoutesList.innerHTML = '';
+        
+        if (this.savedRoutes.length === 0) {
+            savedRoutesList.innerHTML = '<p class="no-routes">Нет сохраненных маршрутов</p>';
+            return;
+        }
+        
+        this.savedRoutes.forEach((route, index) => {
+            const routeItem = document.createElement('div');
+            routeItem.className = 'saved-route-item';
+            routeItem.innerHTML = `
+                <div class="route-header">
+                    <strong>${route.name}</strong>
+                    <span class="route-date">${new Date(route.date).toLocaleDateString()}</span>
+                </div>
+                <div class="route-info-small">
+                    <span>Объектов: ${route.path.length}</span>
+                    <span>Длина: ${route.distance}м</span>
+                </div>
+                <div class="route-actions">
+                    <button class="btn-small btn-load" onclick="app.loadRoute(${index})">📂 Загрузить</button>
+                    <button class="btn-small btn-delete" onclick="app.deleteRoute(${index})">🗑️ Удалить</button>
+                </div>
+            `;
+            savedRoutesList.appendChild(routeItem);
         });
     }
 
@@ -79,6 +114,10 @@ class TourismPlannerApp {
         document.getElementById('clearSelection').addEventListener('click', () => {
             this.clearSelection();
         });
+
+        document.getElementById('saveRoute').addEventListener('click', () => {
+            this.saveCurrentRoute();
+        });
     }
 
     // Поиск оптимального маршрута
@@ -105,6 +144,7 @@ class TourismPlannerApp {
                     return;
                 }
                 
+                this.currentRoute = route;
                 this.displayResults(route);
                 this.mapManager.displayRoute(route, attractions);
             } catch (error) {
@@ -126,7 +166,7 @@ class TourismPlannerApp {
         `;
         
         route.path.forEach((id, index) => {
-            resultsHTML += `<li><strong>${index + 1}.</strong> ${attractions[id].name}</li>`;
+            resultsHTML += `<li><strong>${index + 1}.</strong><a href=https://yandex.ru/search?text=${attractions[id].name.replace(/ /g, '+')}>${attractions[id].name}</a></li>`;
         });
         
         resultsHTML += `
@@ -147,7 +187,112 @@ class TourismPlannerApp {
             resultsHTML += `<div class="warning-message">⚠ В маршрут включено ${route.path.length} из ${this.selectedAttractions.size} объектов</div>`;
         }
         
+        // Добавляем кнопку сохранения
+        if (route.path.length > 0) {
+            resultsHTML += `
+                <div class="save-route-section">
+                    <button id="saveRoute" class="save-route-btn">💾 Сохранить маршрут</button>
+                </div>
+            `;
+        }
+        
         document.getElementById('results').innerHTML = resultsHTML;
+        
+        // Добавляем обработчик для кнопки сохранения
+        setTimeout(() => {
+            const saveBtn = document.getElementById('saveRoute');
+            if (saveBtn) {
+                saveBtn.addEventListener('click', () => {
+                    this.saveCurrentRoute();
+                });
+            }
+        }, 100);
+    }
+
+    // Сохранение текущего маршрута
+    saveCurrentRoute() {
+        if (!this.currentRoute || this.currentRoute.path.length === 0) {
+            this.showMessage('Нет маршрута для сохранения. Сначала постройте маршрут.');
+            return;
+        }
+
+        const routeName = prompt('Введите название для маршрута:', `Маршрут ${new Date().toLocaleDateString()}`);
+        
+        if (!routeName || routeName.trim() === '') {
+            this.showMessage('Название маршрута не может быть пустым.');
+            return;
+        }
+
+        const routeToSave = {
+            name: routeName.trim(),
+            path: this.currentRoute.path,
+            distance: this.currentRoute.distance,
+            date: new Date().toISOString(),
+            selectedAttractions: Array.from(this.selectedAttractions)
+        };
+
+        this.savedRoutes.push(routeToSave);
+        this.saveRoutesToStorage();
+        this.initSavedRoutesList();
+        
+        this.showMessage(`Маршрут "${routeName}" успешно сохранен!`);
+    }
+
+    // Загрузка маршрута
+    loadRoute(index) {
+        if (index < 0 || index >= this.savedRoutes.length) {
+            this.showMessage('Ошибка загрузки маршрута.');
+            return;
+        }
+
+        const route = this.savedRoutes[index];
+        
+        // Восстанавливаем выбранные объекты
+        this.setSelectedAttractions(route.selectedAttractions);
+        
+        // Отображаем маршрут
+        this.currentRoute = { path: route.path, distance: route.distance };
+        this.displayResults(this.currentRoute);
+        this.mapManager.displayRoute(this.currentRoute, attractions);
+        
+        this.showMessage(`Маршрут "${route.name}" загружен.`);
+    }
+
+    // Удаление маршрута
+    deleteRoute(index) {
+        if (index < 0 || index >= this.savedRoutes.length) {
+            this.showMessage('Ошибка удаления маршрута.');
+            return;
+        }
+
+        const routeName = this.savedRoutes[index].name;
+        if (confirm(`Вы уверены, что хотите удалить маршрут "${routeName}"?`)) {
+            this.savedRoutes.splice(index, 1);
+            this.saveRoutesToStorage();
+            this.initSavedRoutesList();
+            this.showMessage(`Маршрут "${routeName}" удален.`);
+        }
+    }
+
+    // Загрузка сохраненных маршрутов из localStorage
+    loadSavedRoutes() {
+        try {
+            const saved = localStorage.getItem('tourismPlanner_routes');
+            return saved ? JSON.parse(saved) : [];
+        } catch (error) {
+            console.error('Ошибка загрузки маршрутов:', error);
+            return [];
+        }
+    }
+
+    // Сохранение маршрутов в localStorage
+    saveRoutesToStorage() {
+        try {
+            localStorage.setItem('tourismPlanner_routes', JSON.stringify(this.savedRoutes));
+        } catch (error) {
+            console.error('Ошибка сохранения маршрутов:', error);
+            this.showMessage('Ошибка сохранения маршрутов в хранилище.');
+        }
     }
 
     // Показать сообщение
@@ -158,6 +303,7 @@ class TourismPlannerApp {
     // Очистка выбора
     clearSelection() {
         this.selectedAttractions.clear();
+        this.currentRoute = null;
         this.mapManager.updateSelectedAttractions(this.selectedAttractions);
         this.mapManager.clearDrawing();
         this.initAttractionsList();
