@@ -193,7 +193,7 @@ class MapManager {
         }
     }
 
-    // Проверка, находится ли точка внутри многоугольника (алгоритм ray casting)
+    // Проверка, находится ли точка внутри многоугольника 
     isPointInPolygon(point, polygon) {
         let inside = false;
         const x = point.lng, y = point.lat;
