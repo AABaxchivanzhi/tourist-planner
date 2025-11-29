@@ -10,8 +10,7 @@ class TourismPlannerApp {
 
     // Инициализация приложения
     init() {
-        // Центрируем карту на Вологде
-        this.mapManager.initMap([59.226, 39.8712], 10);
+        this.mapManager.initMap();
         this.initAttractionsList();
         this.updateMapMarkers();
         this.setupEventListeners();
@@ -56,6 +55,14 @@ class TourismPlannerApp {
         this.initAttractionsList();
     }
 
+    // Установить выбранные достопримечательности (для выделения многоугольником)
+    setSelectedAttractions(selectedIds) {
+        this.selectedAttractions = new Set(selectedIds);
+        this.mapManager.updateSelectedAttractions(this.selectedAttractions);
+        this.updateMapMarkers();
+        this.initAttractionsList();
+    }
+
     // Обновление маркеров на карте
     updateMapMarkers() {
         this.mapManager.addMarkers(attractions, (id) => {
@@ -72,16 +79,6 @@ class TourismPlannerApp {
         document.getElementById('clearSelection').addEventListener('click', () => {
             this.clearSelection();
         });
-
-        // Предупреждение при выборе слишком большого количества объектов
-        document.getElementById('attractionsList').addEventListener('change', (e) => {
-            if (e.target.classList.contains('attraction-checkbox')) {
-                const selectedCount = this.selectedAttractions.size;
-                if (selectedCount > 15) {
-                    this.showWarning(`Выбрано ${selectedCount} объектов. Расчет может занять некоторое время.`);
-                }
-            }
-        });
     }
 
     // Поиск оптимального маршрута
@@ -91,11 +88,6 @@ class TourismPlannerApp {
         
         if (selectedCount === 0) {
             this.showMessage('Пожалуйста, выберите хотя бы одну достопримечательность.');
-            return;
-        }
-
-        if (selectedCount > 20) {
-            this.showMessage('Слишком много выбранных объектов (>20). Пожалуйста, выберите меньше достопримечательностей для оптимальной работы.');
             return;
         }
 
@@ -123,8 +115,6 @@ class TourismPlannerApp {
     }
 
     // Отображение результатов
-        // Отображение результатов
-      // Отображение результатов
     displayResults(route) {
         const maxDistance = parseInt(document.getElementById('maxDistance').value);
         const efficiency = route.distance > 0 ? ((route.distance / maxDistance) * 100).toFixed(1) : '0.0';
@@ -165,28 +155,11 @@ class TourismPlannerApp {
         document.getElementById('results').innerHTML = `<p>${message}</p>`;
     }
 
-    // Показать предупреждение
-    showWarning(message) {
-        const warning = document.createElement('div');
-        warning.className = 'warning-message';
-        warning.style.cssText = 'background-color: #fff3cd; border: 1px solid #ffeaa7; color: #856404; padding: 10px; border-radius: 5px; margin-top: 10px;';
-        warning.textContent = message;
-        
-        const results = document.getElementById('results');
-        results.appendChild(warning);
-        
-        // Автоматически удалить предупреждение через 5 секунд
-        setTimeout(() => {
-            if (warning.parentNode) {
-                warning.parentNode.removeChild(warning);
-            }
-        }, 5000);
-    }
-
     // Очистка выбора
     clearSelection() {
         this.selectedAttractions.clear();
         this.mapManager.updateSelectedAttractions(this.selectedAttractions);
+        this.mapManager.clearDrawing();
         this.initAttractionsList();
         this.updateMapMarkers();
         this.mapManager.clearRoute();
