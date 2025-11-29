@@ -1,25 +1,98 @@
-// Данные о достопримечательностях Вологды
-const attractions = [
-    { id: 0, name: "Краеведческий музей заповедник", lat: 59.2236047, lng: 39.8815831 },
-    { id: 1, name: "Галерея Красный мост", lat: 59.2218485, lng: 39.8951011 },
-    { id: 2, name: "Церковь Варлаама Хутынского", lat: 59.2201563, lng: 39.8847294 },
-    { id: 3, name: "Софийский собор", lat: 59.2217892, lng: 39.8839947 },
-    { id: 4, name: "Памятник букве О", lat: 59.224697, lng: 39.88406 },
-    { id: 5, name: "Памятник К.Н. Батюшкову", lat: 59.2198341, lng: 39.8916728 },
-    { id: 6, name: "Дом Петра I", lat: 59.2224561, lng: 39.8843926 },
-    { id: 7, name: "Вологодский Кремль", lat: 59.2208945, lng: 39.8821673 },
-    { id: 8, name: "Вологодский драматический театр", lat: 59.2178934, lng: 39.8894562 }
-];
+/**
+ * Рассчитывает расстояние между двумя точками на Земле по формуле гаверсинуса
+ * @param {number} lat1 - Широта первой точки
+ * @param {number} lon1 - Долгота первой точки
+ * @param {number} lat2 - Широта второй точки
+ * @param {number} lon2 - Долгота второй точки
+ * @returns {number} Расстояние в километрах
+ */
+function calculateDistance(lat1, lon1, lat2, lon2) {
+    const R = 6371; // Радиус Земли в километрах
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a = 
+        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+        Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
+        Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c;
+}
 
-// Матрица расстояний между объектами в Вологде (в метрах)
-const distanceMatrix = [
-    [0, 950, 400, 250, 1200, 1100, 150, 350, 1400],
-    [950, 0, 800, 850, 350, 450, 900, 900, 650],
-    [400, 800, 0, 200, 850, 750, 300, 250, 1000],
-    [250, 850, 200, 0, 950, 850, 200, 150, 1150],
-    [1200, 350, 850, 950, 0, 150, 1150, 1050, 300],
-    [1100, 450, 750, 850, 150, 0, 1050, 950, 450],
-    [150, 900, 300, 200, 1150, 1050, 0, 250, 1300],
-    [350, 900, 250, 150, 1050, 950, 250, 0, 1200],
-    [1400, 650, 1000, 1150, 300, 450, 1300, 1200, 0]
-];
+/**
+ * Создает матрицу расстояний между всеми точками
+ * @param {Array} points - Массив объектов с полями lat и lon
+ * @returns {Array} Матрица расстояний (2D массив)
+ */
+function createDistanceMatrix(points) {
+    const n = points.length;
+    const matrix = [];
+    
+    // Проверка входных данных
+    if (!Array.isArray(points)) {
+        throw new Error('Входные данные должны быть массивом');
+    }
+    
+    if (n === 0) {
+        return [];
+    }
+    
+    // Проверка структуры объектов
+    points.forEach((point, index) => {
+        if (typeof point.lat === 'undefined' || typeof point.lon === 'undefined') {
+            throw new Error(`Объект с индексом ${index} не содержит полей lat и lon`);
+        }
+        if (typeof point.lat !== 'number' || typeof point.lon !== 'number') {
+            throw new Error(`Поля lat и lon объекта с индексом ${index} должны быть числами`);
+        }
+    });
+    
+    // Заполнение матрицы
+    for (let i = 0; i < n; i++) {
+        matrix[i] = [];
+        for (let j = 0; j < n; j++) {
+            if (i === j) {
+                matrix[i][j] = 0; // Расстояние до самой себя равно 0
+            } else {
+                matrix[i][j] = calculateDistance(
+                    points[i].lat, points[i].lon,
+                    points[j].lat, points[j].lon
+                );
+            }
+        }
+    }
+    
+    return matrix;
+}
+
+// Альтернативная версия с кэшированием для оптимизации
+function createDistanceMatrixOptimized(points) {
+    const n = points.length;
+    const matrix = Array(n).fill().map(() => Array(n).fill(0));
+    
+    // Предварительно конвертируем координаты в радианы
+    const pointsRad = points.map(point => ({
+        lat: point.lat * Math.PI / 180,
+        lon: point.lon * Math.PI / 180
+    }));
+    
+    const R = 6371;
+    
+    for (let i = 0; i < n; i++) {
+        for (let j = i + 1; j < n; j++) {
+            const dLat = pointsRad[j].lat - pointsRad[i].lat;
+            const dLon = pointsRad[j].lon - pointsRad[i].lon;
+            
+            const a = 
+                Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                Math.cos(pointsRad[i].lat) * Math.cos(pointsRad[j].lat) * 
+                Math.sin(dLon / 2) * Math.sin(dLon / 2);
+            
+            const distance = R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+            
+            matrix[i][j] = distance;
+            matrix[j][i] = distance; // Матрица симметрична
+        }
+    }
+    
+    return matrix;
+}

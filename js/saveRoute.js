@@ -386,7 +386,6 @@ class RouteManager {
             border-radius: 4px;
             z-index: 10000;
             max-width: 300px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
         `;
 
         document.body.appendChild(messageEl);

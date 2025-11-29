@@ -180,18 +180,14 @@ class MapManager {
             }
         });
         
-        console.log('Выбрано объектов в многоугольнике:', selectedIds.length, selectedIds);
+    //     console.log('Выбрано объектов в многоугольнике:', selectedIds.length, selectedIds);
         
         // Обновляем выбор
         if (typeof app !== 'undefined' && selectedIds.length > 0) {
             app.setSelectedAttractions(selectedIds);
             
-            // Показываем сообщение о результате
-            app.showMessage(`В выделенной области найдено ${selectedIds.length} объектов. Они автоматически выбраны.`);
-        } else if (selectedIds.length === 0) {
-            app.showMessage('В выделенной области не найдено объектов.');
         }
-    }
+     }
 
     // Проверка, находится ли точка внутри многоугольника 
     isPointInPolygon(point, polygon) {
@@ -229,7 +225,7 @@ class MapManager {
         
         // Скрываем инструкцию
         document.getElementById('drawingInstruction').style.display = 'none';
-        
+        clearMarkers();
         console.log('Рисование очищено');
     }
 
@@ -266,9 +262,9 @@ class MapManager {
         marker.setIcon(
             L.divIcon({
                 className: 'selected-marker',
-                html: '<div style="background-color: #3498db; width: 12px; height: 12px; border-radius: 50%; border: 2px solid white; box-shadow: 0 0 5px rgba(0,0,0,0.5);"></div>',
+                html: '<div style="background-color: #3498db; width: 12px; height: 12px; border-radius: 50%; border: 2px solid white"></div>',
                 iconSize: [16, 16],
-                iconAnchor: [8, 8]
+                // iconAnchor: [8, 8]
             })
         );
     }

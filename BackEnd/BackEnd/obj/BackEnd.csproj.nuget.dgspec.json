@@ -1,23 +1,23 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\Arraki\\tourist-planner\\BackEnd\\BackEnd\\BackEnd.csproj": {}
+    "C:\\Users\\Alya\\Documents\\GitHub\\tourist-planner\\BackEnd\\BackEnd\\BackEnd.csproj": {}
   },
   "projects": {
-    "C:\\Users\\Arraki\\tourist-planner\\BackEnd\\BackEnd\\BackEnd.csproj": {
+    "C:\\Users\\Alya\\Documents\\GitHub\\tourist-planner\\BackEnd\\BackEnd\\BackEnd.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\Arraki\\tourist-planner\\BackEnd\\BackEnd\\BackEnd.csproj",
+        "projectUniqueName": "C:\\Users\\Alya\\Documents\\GitHub\\tourist-planner\\BackEnd\\BackEnd\\BackEnd.csproj",
         "projectName": "BackEnd",
-        "projectPath": "C:\\Users\\Arraki\\tourist-planner\\BackEnd\\BackEnd\\BackEnd.csproj",
-        "packagesPath": "C:\\Users\\Arraki\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\Arraki\\tourist-planner\\BackEnd\\BackEnd\\obj\\",
+        "projectPath": "C:\\Users\\Alya\\Documents\\GitHub\\tourist-planner\\BackEnd\\BackEnd\\BackEnd.csproj",
+        "packagesPath": "C:\\Users\\Alya\\.nuget\\packages\\",
+        "outputPath": "C:\\Users\\Alya\\Documents\\GitHub\\tourist-planner\\BackEnd\\BackEnd\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
         ],
         "configFilePaths": [
-          "C:\\Users\\Arraki\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Users\\Alya\\AppData\\Roaming\\NuGet\\NuGet.Config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
         ],
@@ -74,7 +74,7 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.306/PortableRuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.308/PortableRuntimeIdentifierGraph.json"
         }
       }
     }
