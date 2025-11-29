@@ -5,6 +5,10 @@ class MapManager {
         this.markers = [];
         this.routeLayer = null;
         this.selectedAttractions = new Set();
+        this.drawnItems = new L.FeatureGroup();
+        this.isDrawing = false;
+        this.polygonLayer = null;
+        this.polygonPoints = [];
     }
 
     // Инициализация карты
@@ -15,7 +19,218 @@ class MapManager {
             attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
         }).addTo(this.map);
         
+        // Добавляем слой для рисования
+        this.drawnItems.addTo(this.map);
+        this.initDrawingControls();
+        
         return this.map;
+    }
+
+    // Инициализация элементов управления рисованием
+    initDrawingControls() {
+        // Создаем кастомные контролы для рисования
+        const drawControl = L.control({ position: 'topright' });
+        
+        drawControl.onAdd = (map) => {
+            const div = L.DomUtil.create('div', 'drawing-controls');
+            div.innerHTML = `
+                <div class="drawing-buttons">
+                    <button id="drawPolygon" class="draw-btn" title="Нарисовать многоугольник">
+                        ⬢ Выделить область
+                    </button>
+                    <button id="clearDrawing" class="draw-btn clear-btn" title="Очистить выделение">
+                        ✕ Очистить
+                    </button>
+                </div>
+                <div class="drawing-instruction" id="drawingInstruction" style="display: none;">
+                    <small>Кликайте по карте для создания вершин. Завершите двойным кликом.</small>
+                </div>
+            `;
+            
+            // Предотвращаем закрытие карты при клике на кнопки
+            L.DomEvent.disableClickPropagation(div);
+            
+            return div;
+        };
+        
+        drawControl.addTo(this.map);
+        
+        // Добавляем обработчики для кнопок
+        setTimeout(() => {
+            document.getElementById('drawPolygon').addEventListener('click', () => {
+                this.startDrawing();
+            });
+            
+            document.getElementById('clearDrawing').addEventListener('click', () => {
+                this.clearDrawing();
+            });
+        }, 100);
+    }
+
+    // Начать рисование многоугольника
+    startDrawing() {
+        if (this.isDrawing) return;
+        
+        this.isDrawing = true;
+        this.polygonPoints = [];
+        
+        // Показываем инструкцию
+        document.getElementById('drawingInstruction').style.display = 'block';
+        
+        // Включаем режим рисования
+        this.map.doubleClickZoom.disable();
+        this.map.on('click', this.handleMapClick.bind(this));
+        this.map.on('dblclick', this.finishDrawing.bind(this));
+        
+        // Создаем временный слой для многоугольника
+        this.polygonLayer = L.polygon([], {
+            color: '#3498db',
+            weight: 3,
+            fillColor: '#3498db',
+            fillOpacity: 0.3,
+            dashArray: '5, 5'
+        }).addTo(this.map);
+        
+        // Меняем курсор
+        this.map.getContainer().style.cursor = 'crosshair';
+        
+        console.log('Начато рисование многоугольника');
+    }
+
+    // Обработчик кликов по карте при рисовании
+    handleMapClick(e) {
+        if (!this.isDrawing || !this.polygonLayer) return;
+        
+        const latlng = e.latlng;
+        this.polygonPoints.push(latlng);
+        
+        // Обновляем многоугольник
+        this.polygonLayer.setLatLngs([this.polygonPoints]);
+        
+        console.log('Добавлена вершина:', latlng);
+    }
+
+    // Завершить рисование
+    finishDrawing(e) {
+        if (!this.isDrawing || !this.polygonLayer || this.polygonPoints.length < 3) {
+            this.clearDrawing();
+            return;
+        }
+        
+        this.isDrawing = false;
+        
+        // Скрываем инструкцию
+        document.getElementById('drawingInstruction').style.display = 'none';
+        
+        // Восстанавливаем нормальный режим карты
+        this.map.doubleClickZoom.enable();
+        this.map.off('click', this.handleMapClick.bind(this));
+        this.map.off('dblclick', this.finishDrawing.bind(this));
+        this.map.getContainer().style.cursor = '';
+        
+        // Создаем постоянный многоугольник
+        const permanentPolygon = L.polygon([this.polygonPoints], {
+            color: '#3498db',
+            weight: 3,
+            fillColor: '#3498db',
+            fillOpacity: 0.2
+        }).addTo(this.drawnItems);
+        
+        // Добавляем попап с информацией
+        permanentPolygon.bindPopup(`
+            <div style="text-align: center;">
+                <b>Выделенная область</b><br>
+                <small>${this.polygonPoints.length} вершин</small><br>
+                <button onclick="app.mapManager.selectAttractionsInDrawnPolygon()" 
+                        style="margin-top: 5px; padding: 5px 10px; background: #27ae60; color: white; border: none; border-radius: 3px; cursor: pointer;">
+                    Выбрать объекты внутри
+                </button>
+            </div>
+        `).openPopup();
+        
+        // Находим достопримечательности внутри многоугольника
+        this.selectAttractionsInPolygon(this.polygonPoints);
+        
+        // Удаляем временный слой
+        this.map.removeLayer(this.polygonLayer);
+        this.polygonLayer = null;
+        this.polygonPoints = [];
+        
+        console.log('Рисование завершено');
+    }
+
+    // Выбрать достопримечательности в нарисованном многоугольнике
+    selectAttractionsInDrawnPolygon() {
+        const polygons = this.drawnItems.getLayers();
+        if (polygons.length > 0) {
+            const polygon = polygons[0];
+            const latLngs = polygon.getLatLngs()[0];
+            this.selectAttractionsInPolygon(latLngs);
+        }
+    }
+
+    // Выбрать достопримечательности внутри многоугольника
+    selectAttractionsInPolygon(polygon) {
+        const selectedIds = [];
+        
+        attractions.forEach(attraction => {
+            const point = L.latLng(attraction.lat, attraction.lng);
+            if (this.isPointInPolygon(point, polygon)) {
+                selectedIds.push(attraction.id);
+            }
+        });
+        
+        console.log('Выбрано объектов в многоугольнике:', selectedIds.length, selectedIds);
+        
+        // Обновляем выбор
+        if (typeof app !== 'undefined' && selectedIds.length > 0) {
+            app.setSelectedAttractions(selectedIds);
+            
+            // Показываем сообщение о результате
+            app.showMessage(`В выделенной области найдено ${selectedIds.length} объектов. Они автоматически выбраны.`);
+        } else if (selectedIds.length === 0) {
+            app.showMessage('В выделенной области не найдено объектов.');
+        }
+    }
+
+    // Проверка, находится ли точка внутри многоугольника (алгоритм ray casting)
+    isPointInPolygon(point, polygon) {
+        let inside = false;
+        const x = point.lng, y = point.lat;
+        
+        for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
+            const xi = polygon[i].lng, yi = polygon[i].lat;
+            const xj = polygon[j].lng, yj = polygon[j].lat;
+            
+            const intersect = ((yi > y) !== (yj > y)) &&
+                (x < (xj - xi) * (y - yi) / (yj - yi) + xi);
+            
+            if (intersect) inside = !inside;
+        }
+        
+        return inside;
+    }
+
+    // Очистить рисование
+    clearDrawing() {
+        this.drawnItems.clearLayers();
+        if (this.polygonLayer) {
+            this.map.removeLayer(this.polygonLayer);
+            this.polygonLayer = null;
+        }
+        this.isDrawing = false;
+        this.polygonPoints = [];
+        
+        // Восстанавливаем нормальный режим карты
+        this.map.doubleClickZoom.enable();
+        this.map.off('click', this.handleMapClick.bind(this));
+        this.map.off('dblclick', this.finishDrawing.bind(this));
+        this.map.getContainer().style.cursor = '';
+        
+        // Скрываем инструкцию
+        document.getElementById('drawingInstruction').style.display = 'none';
+        
+        console.log('Рисование очищено');
     }
 
     // Добавление маркеров на карту
