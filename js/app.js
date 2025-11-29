@@ -150,8 +150,7 @@ class TourismPlannerApp {
         `;
         
         route.path.forEach((id, index) => {
-            resultsHTML += `<li><strong>${index + 1}.</strong> ${attractions[id].name}</li>`;
-        });
+            resultsHTML += `<li><strong>${index + 1}.</strong><a href=https://yandex.ru/search?text=${encodeURIComponent(attractions[id].name)} target="_blank" rel="noopener">${attractions[id].name}</a></li>`; });
         
         resultsHTML += `
                 </ol>
