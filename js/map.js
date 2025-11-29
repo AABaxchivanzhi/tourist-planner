@@ -9,7 +9,7 @@ class MapManager {
 
     // Инициализация карты
     initMap() {
-        this.map = L.map('map').setView([59.7558, 39.6173], 13);
+        this.map = L.map('map').setView([59.216, 39.8840], 14);
         
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'

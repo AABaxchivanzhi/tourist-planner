@@ -11,7 +11,7 @@ class TourismPlannerApp {
     // Инициализация приложения
     init() {
         // Центрируем карту на Вологде
-        this.mapManager.initMap([59.220, 39.890], 14);
+        this.mapManager.initMap([59.226, 39.8712], 10);
         this.initAttractionsList();
         this.updateMapMarkers();
         this.setupEventListeners();
